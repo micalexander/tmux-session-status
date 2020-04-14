@@ -1,0 +1,94 @@
+#!/usr/local/bin/bash
+
+
+sessions=($(echo $(tmux list-sessions -F '#S')))
+current_session=$(tmux display-message -p '#S')
+
+for i in "${!sessions[@]}"; do
+  if [[ "${sessions[$i]}" = "${current_session}" ]]; then
+      current_session_index="${i}"
+  fi
+done
+
+sessions_length=${#sessions[@]}
+sessions_last_index=$((${sessions_length} - 1))
+sessions_second_to_last_index=$((${sessions_last_index} - 1))
+session_before_current_index=$((${current_session_index} - 1))
+session_after_current_index=$((${current_session_index} + 1))
+
+if [ "$current_session_index" = "0" ]; then
+  previous_session_index=${sessions_last_index}
+  previous_previous_session_index=$((${sessions_last_index} - 1))
+else
+  previous_session_index=${session_before_current_index}
+  if [ "$previous_session_index" = "0" ]; then
+    previous_previous_session_index=${sessions_last_index}
+  else
+    previous_previous_session_index=$((${session_before_current_index} - 1))
+  fi
+fi
+
+if [ "$current_session_index" = "$sessions_last_index" ]; then
+  next_session_index=0
+  next_next_session_index=1
+else
+  next_session_index=$session_after_current_index
+  if [ "$next_session_index" = "$sessions_last_index" ]; then
+    next_next_session_index=0
+  else
+    next_next_session_index=$((${session_after_current_index} + 1))
+  fi
+fi
+
+position1="${sessions[$previous_previous_session_index]} "
+position2="${sessions[$previous_session_index]} "
+position3="${sessions[$next_session_index]}  "
+position4="${sessions[$next_next_session_index]} "
+
+center_text="$sessions_length"
+# center_text=""
+
+color_text="#abb2bf"
+color_green="green"
+color_black="black"
+color_gray="#3b4048"
+color_none="#2c323c"
+color_center_end="green"
+color_center_end_left="$color_green"
+color_center_end_right="$color_green"
+color_position2_end_left="$color_gray"
+color_position2_end_right="$color_gray"
+
+if [ "$sessions_length" = 1 ]; then
+  position1="..."
+  position2="..."
+  position3="..."
+  position4="..."
+  color_gray="black"
+  color_center_end_left="$color_none"
+  color_center_end_right="$color_black"
+fi
+if [ "$sessions_length" = 2 ] || [ "$sessions_length" = 3 ]; then
+color_position2_end_left="$color_none"
+color_position3_end_right="$color_green"
+fi
+
+#[fg=${color_gray},bg=#98c379]#[fg=${color_gray},bg=${color_gray},nobold,nounderscore,noitalics]
+position1_wrapper="#[fg=${color_gray},bg=#2c323c,nobold,nounderscore,noitalics]#[fg=${color_text},bg=${color_gray}] ${position1} "
+position2_wrapper="#[fg=${color_green},bg=${color_position2_end_left},nobold,nounderscore,noitalics]#[fg=${color_black},bg=${color_green}] ${position2} "
+center_piece_wrapper="#[fg=${color_black},bg=${color_center_end_left},nobold,nounderscore,noitalics]#[fg=${color_black},bg=#98c379,nobold,nounderscore,noitalics]#[fg=${color_green},bg=${color_black},nobold,nounderscore,noitalics]  ${center_text}  #[fg=#abb2bf,bg=${color_gray}]#[fg=${color_black},bg=${color_center_end_right},nobold,nounderscore,noitalics]"
+position3_wrapper=" ${position3}#[fg=${color_green},bg=${color_position3_end_right},nobold,nounderscore,noitalics]"
+position4_wrapper="#[fg=#abb2bf,bg=${color_green}]#[fg=${color_black},bg=${color_green}]#[fg=${color_text},bg=${color_gray}] ${position4} "
+
+if [ "$sessions_length" = 1 ]; then position1_wrapper="" position2_wrapper=""
+  position3_wrapper=""
+  position4_wrapper=""
+fi
+if [ "$sessions_length" = 2 ] || [ "$sessions_length" = 3 ]; then
+  position1_wrapper=""
+  position4_wrapper=""
+
+fi
+
+echo "$position1_wrapper$position2_wrapper$center_piece_wrapper$position3_wrapper$position4_wrapper"
+
